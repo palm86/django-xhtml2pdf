@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 from django.conf import settings
+from django.contrib.staticfiles import finders
 from django.http import HttpResponse
 from django.template.context import Context
 from django.template.loader import get_template
@@ -24,13 +25,16 @@ def fetch_resources(uri, rel):
         path = os.path.join(settings.MEDIA_ROOT,
                             uri.replace(settings.MEDIA_URL, ""))
     elif settings.STATIC_URL and uri.startswith(settings.STATIC_URL):
-        path = os.path.join(settings.STATIC_ROOT,
-                            uri.replace(settings.STATIC_URL, ""))
-        if not os.path.exists(path):
-            for d in settings.STATICFILES_DIRS:
-                path = os.path.join(d, uri.replace(settings.STATIC_URL, ""))
-                if os.path.exists(path):
-                    break
+        if 'django.contrib.staticfiles' in settings.INSTALLED_APPS:
+            path = finders.find(uri.replace(settings.STATIC_URL, ""))
+        else:
+            path = os.path.join(settings.STATIC_ROOT,
+                                uri.replace(settings.STATIC_URL, ""))
+            if not os.path.exists(path):
+                for d in settings.STATICFILES_DIRS:
+                    path = os.path.join(d, uri.replace(settings.STATIC_URL, ""))
+                    if os.path.exists(path):
+                        break
     elif uri.startswith("http://") or uri.startswith("https://"):
         path = uri
     else:
